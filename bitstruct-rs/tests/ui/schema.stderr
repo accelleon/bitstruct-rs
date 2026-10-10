@@ -39,3 +39,15 @@ error: padding fields must be u1..=u128
    |
 37 |     struct TypedPadding { _: String, a: u8 }
    |                              ^^^^^^
+
+error: bool fields are 1 bit
+  --> tests/ui/schema.rs:42:37
+   |
+42 |     struct WideBool { #[bits(2)] a: bool, b: u6 }
+   |                                     ^^^^
+
+error: padding fields must be u1..=u128
+  --> tests/ui/schema.rs:47:29
+   |
+47 |     struct BoolPadding { _: bool, a: u7 }
+   |                             ^^^^

@@ -2,8 +2,8 @@
 
 Zero-copy bitfields over byte slices, with in-place mutation and a `no_std`
 runtime. Inside `bitstruct! { ... }`, declare one or more structs marked
-`#[bitstruct(order = ..., endian = ...)]` with fields `u1` through `u128`; each
-becomes an immutable `Name<'a>` and a mutable `NameMut<'a>` view.
+`#[bitstruct(order = ..., endian = ...)]` with fields `u1` through `u128` or
+`bool`; each becomes an immutable `Name<'a>` and a mutable `NameMut<'a>` view.
 
 ```rust
 use bitstruct_rs::bitstruct;
@@ -19,7 +19,8 @@ bitstruct! {
         identification: u16,
         #[word(u16)]
         _: u1,
-        flags: u2,
+        dont_fragment: bool,
+        more_fragments: bool,
         fragment: u13,
     }
 }
@@ -27,7 +28,8 @@ bitstruct! {
 let mut bytes = [0x45, 0, 0, 20, 0, 0, 0x40, 1];
 let mut header = Ipv4PrefixMut::from_bytes(&mut bytes)?;
 assert_eq!(header.version(), 4);
-assert_eq!(header.flags(), 2);
+assert!(header.dont_fragment());
+assert!(!header.more_fragments());
 assert_eq!(header.fragment(), 1);
 header.set_dscp(46)?;
 assert_eq!(header.as_bytes()[1], 0xb8);
@@ -47,9 +49,9 @@ must start on a byte boundary and its fields must exactly fill the word.
 Supported word sizes are `u8`, `u16`, `u32`, `u64`, and `u128`.
 
 Within a decoded word, `msb0` places the first field in the high bits and `lsb0`
-in the low bits. For the example above, the reserved bit `0`, flags `2` and
-fragment `1` form `0x4001`: `[0x40, 0x01]` in big endian or `[0x01, 0x40]` in
-little endian.
+in the low bits. For the example above, the reserved bit, `dont_fragment` set,
+`more_fragments` clear and fragment `1` form `0x4001`: `[0x40, 0x01]` in big
+endian or `[0x01, 0x40]` in little endian.
 
 Ungrouped packed fields traverse bytes in address order, most-significant-first
 for `msb0` or least-significant-first for `lsb0`, independently of endian.
@@ -65,6 +67,7 @@ fields leave them unchanged.
 ## Access
 
 - Numeric getters return the smallest native unsigned integer that fits.
+- `bool` fields are one bit and need no `#[bits]`; their getters return `bool`.
 - Setters return an error for out-of-range values without changing the buffer.
 - `from_bytes()` checks length and borrows only the header-sized prefix.
 - `as_view()` and `reborrow()` borrow an existing mutable view.

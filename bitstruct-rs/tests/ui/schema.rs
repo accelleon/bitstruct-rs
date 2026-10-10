@@ -37,4 +37,14 @@ bitstruct! {
     struct TypedPadding { _: String, a: u8 }
 }
 
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct WideBool { #[bits(2)] a: bool, b: u6 }
+}
+
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct BoolPadding { _: bool, a: u7 }
+}
+
 fn main() {}

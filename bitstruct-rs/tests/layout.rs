@@ -162,7 +162,6 @@ bitstruct! {
         mode: Mode,
         #[bits(3)]
         flags: Flags,
-        #[bits(1)]
         enabled: bool,
         reserved: u2,
     }
@@ -671,7 +670,7 @@ fn enums_flags_and_bool_round_trip() {
     view.set_enabled(true).unwrap();
     assert_eq!(view.mode().unwrap(), Mode::B);
     assert_eq!(view.flags().unwrap(), Flags::A | Flags::B);
-    assert!(view.enabled().unwrap());
+    assert!(view.enabled());
     view.set_flags(Flags::from_bits_retain(7)).unwrap();
     assert_eq!(view.flags().unwrap().bits(), 7);
     assert_eq!(view.mode_raw(), 2);
@@ -821,4 +820,88 @@ fn padding_fields_reserve_bits_without_accessors() {
         view.set_value(0x2aa).unwrap();
         assert_eq!(u16::from_le_bytes(bytes), (initial & 0xe007) | (0x2aa << 3));
     }
+}
+
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct Bools {
+        b0: bool,
+        b1: bool,
+        b2: bool,
+        b3: bool,
+        b4: bool,
+        b5: bool,
+        b6: bool,
+        b7: bool,
+    }
+
+    #[bitstruct(order = lsb0, endian = little)]
+    struct LsbBools {
+        first: bool,
+        // Redundant but allowed.
+        #[bits(1)]
+        second: bool,
+        _: u5,
+        last: bool,
+        #[word(u16)]
+        low: bool,
+        rest: u15,
+    }
+}
+
+type BoolSetter = fn(&mut BoolsMut<'_>, bool) -> Result<(), Error>;
+
+#[test]
+fn bool_fields_are_single_bits() {
+    let getters: [fn(&Bools<'_>) -> bool; 8] = [
+        |view| view.b0(),
+        |view| view.b1(),
+        |view| view.b2(),
+        |view| view.b3(),
+        |view| view.b4(),
+        |view| view.b5(),
+        |view| view.b6(),
+        |view| view.b7(),
+    ];
+    let setters: [BoolSetter; 8] = [
+        |view, value| view.set_b0(value),
+        |view, value| view.set_b1(value),
+        |view, value| view.set_b2(value),
+        |view, value| view.set_b3(value),
+        |view, value| view.set_b4(value),
+        |view, value| view.set_b5(value),
+        |view, value| view.set_b6(value),
+        |view, value| view.set_b7(value),
+    ];
+    for initial in 0..=u8::MAX {
+        for (i, (get, set)) in getters.iter().zip(setters).enumerate() {
+            let mask = 0x80 >> i;
+            assert_eq!(
+                get(&Bools::from_bytes(&[initial]).unwrap()),
+                initial & mask != 0
+            );
+            for value in [false, true] {
+                let mut bytes = [initial];
+                set(&mut BoolsMut::from_bytes(&mut bytes).unwrap(), value).unwrap();
+                let expected = if value {
+                    initial | mask
+                } else {
+                    initial & !mask
+                };
+                assert_eq!(bytes, [expected]);
+            }
+        }
+    }
+
+    let mut bytes = [0b1000_0001, 0x01, 0x80];
+    let mut view = LsbBoolsMut::from_bytes(&mut bytes).unwrap();
+    assert!(view.first());
+    assert!(!view.second());
+    assert!(view.last());
+    assert!(view.low());
+    assert_eq!(view.rest(), 0x4000);
+    view.set_first(false).unwrap();
+    view.set_second(true).unwrap();
+    view.set_low(false).unwrap();
+    assert_eq!(bytes, [0b1000_0010, 0x00, 0x80]);
 }

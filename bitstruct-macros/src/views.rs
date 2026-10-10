@@ -15,7 +15,7 @@ use quote::{format_ident, quote};
 use syn::ItemStruct;
 use syn::parse::{ParseStream, Parser};
 
-use crate::layout::{self, Field, Layout, mask, native_type};
+use crate::layout::{self, Field, FieldKind, Layout, mask, native_type};
 use crate::options::{self, Options};
 use crate::{access, runtime_crate};
 
@@ -146,7 +146,14 @@ fn getter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
     let docs = &field.docs;
     let read = access::read(field, options, byte_len);
 
-    if field.uses_codec {
+    if field.kind == FieldKind::Bool {
+        return quote! {
+            #(#docs)*
+            #[inline]
+            pub fn #name(&self) -> bool { (#read) != 0 }
+        };
+    }
+    if field.kind == FieldKind::Codec {
         let raw = format_ident!("{}_raw", name);
         let raw_ty = native_type(field.bits);
         quote! {
@@ -177,10 +184,9 @@ fn setter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
     let bits = field.bits as u32;
     let max = mask(field.bits);
     let write = access::write(field, options, byte_len);
-    let to_bits = if field.uses_codec {
-        quote!(<#ty as #rt::BitCodec>::to_bits(&value))
-    } else {
-        quote!(value as u128)
+    let to_bits = match field.kind {
+        FieldKind::Codec => quote!(<#ty as #rt::BitCodec>::to_bits(&value)),
+        FieldKind::Unsigned | FieldKind::Bool => quote!(value as u128),
     };
 
     quote! {
@@ -216,7 +222,7 @@ fn check_name_collisions(layout: &Layout) -> syn::Result<()> {
 
     for field in layout.fields.iter().filter(|field| !field.padding) {
         let mut names = vec![field.name.to_string(), format!("set_{}", field.name)];
-        if field.uses_codec {
+        if field.kind == FieldKind::Codec {
             names.push(format!("{}_raw", field.name));
         }
         for name in names {

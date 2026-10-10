@@ -19,10 +19,9 @@ pub struct Layout {
 pub struct Field {
     pub name: Ident,
     /// Type taken and returned by the accessors: a native integer for `uN`
-    /// fields, or the user's enum/flags type.
+    /// fields, `bool`, or the user's enum/flags type.
     pub ty: Type,
-    /// True if values convert through `BitCodec` (enums, flags, `bool`).
-    pub uses_codec: bool,
+    pub kind: FieldKind,
     /// True for `_: uN`: reserved bits that get no accessors.
     pub padding: bool,
     /// Width in bits.
@@ -31,6 +30,17 @@ pub struct Field {
     pub start: usize,
     pub storage: Storage,
     pub docs: Vec<Attribute>,
+}
+
+/// How a field's value converts to and from its bits.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum FieldKind {
+    /// `uN`: the smallest native unsigned integer that fits.
+    Unsigned,
+    /// `bool`: one bit, `1` is `true`.
+    Bool,
+    /// `#[bits(N)]` on an enum, flags or other `BitCodec` type.
+    Codec,
 }
 
 /// How a field's bits are found in the buffer.
@@ -88,21 +98,31 @@ pub fn parse(item: &ItemStruct) -> syn::Result<Layout> {
             });
         }
 
-        // `u6` declares its own width; other types need `#[bits(N)]`.
+        // `u6` and `bool` declare their own width; other types need `#[bits(N)]`.
         let declared = unsigned_width(&field.ty);
-        let uses_codec = attrs.bits.is_some() || declared.is_none();
+        let kind = if is_bool(&field.ty) {
+            if attrs.bits.is_some_and(|bits| bits != 1) {
+                return Err(syn::Error::new(field.ty.span(), "bool fields are 1 bit"));
+            }
+            FieldKind::Bool
+        } else if attrs.bits.is_some() || declared.is_none() {
+            FieldKind::Codec
+        } else {
+            FieldKind::Unsigned
+        };
         let name = field.ident.clone().expect("named field");
         let padding = name == "_";
-        if padding && uses_codec {
+        if padding && kind != FieldKind::Unsigned {
             return Err(syn::Error::new(
                 field.ty.span(),
                 "padding fields must be u1..=u128",
             ));
         }
-        let bits = attrs
-            .bits
-            .or(declared)
-            .ok_or_else(|| syn::Error::new(field.ty.span(), "typed fields require #[bits(N)]"))?;
+        let bits = match kind {
+            FieldKind::Bool => Some(1),
+            _ => attrs.bits.or(declared),
+        }
+        .ok_or_else(|| syn::Error::new(field.ty.span(), "typed fields require #[bits(N)]"))?;
         if !(1..=128).contains(&bits) {
             return Err(syn::Error::new(field.span(), "field width must be 1..=128"));
         }
@@ -124,17 +144,19 @@ pub fn parse(item: &ItemStruct) -> syn::Result<Layout> {
             }
             None => Storage::Packed,
         };
-        let ty = if uses_codec {
-            field.ty.clone()
-        } else {
-            let native = native_type(bits);
-            syn::parse_quote!(#native)
+        let ty = match kind {
+            FieldKind::Unsigned => {
+                let native = native_type(bits);
+                syn::parse_quote!(#native)
+            }
+            FieldKind::Bool => syn::parse_quote!(bool),
+            FieldKind::Codec => field.ty.clone(),
         };
 
         fields.push(Field {
             name,
             ty,
-            uses_codec,
+            kind,
             padding,
             bits,
             start: next_bit,
@@ -232,6 +254,11 @@ pub fn unsigned_width(ty: &Type) -> Option<usize> {
         return None;
     }
     segment.ident.to_string().strip_prefix('u')?.parse().ok()
+}
+
+/// True for the plain type name `bool`.
+fn is_bool(ty: &Type) -> bool {
+    matches!(ty, Type::Path(path) if path.qself.is_none() && path.path.is_ident("bool"))
 }
 
 /// Smallest native unsigned integer holding `bits` bits: 6 -> `u8`, 13 -> `u16`.
