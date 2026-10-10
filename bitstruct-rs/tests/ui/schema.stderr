@@ -1,0 +1,35 @@
+error: schema and word groups must be fully byte-sized
+ --> tests/ui/schema.rs:4:1
+  |
+4 | struct Partial { a: u3 }
+  | ^^^^^^
+
+error: field width must be 1..=128
+ --> tests/ui/schema.rs:7:19
+  |
+7 | struct Oversize { a: u129 }
+  |                   ^
+
+error: typed fields require #[bits(N)]
+  --> tests/ui/schema.rs:10:21
+   |
+10 | struct Unknown { a: String }
+   |                     ^^^^^^
+
+error: generated accessor name collision
+  --> tests/ui/schema.rs:13:27
+   |
+13 | struct Collision { a: u8, set_a: u8 }
+   |                           ^^^^^
+
+error: only documentation attributes are supported on a bitstruct schema
+  --> tests/ui/schema.rs:16:1
+   |
+16 | #[repr(u16)]
+   | ^
+
+error: only documentation attributes are supported on a bitstruct schema
+  --> tests/ui/schema.rs:20:1
+   |
+20 | #[derive(Clone)]
+   | ^

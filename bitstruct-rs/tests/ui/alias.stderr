@@ -1,0 +1,9 @@
+error[E0502]: cannot borrow `view` as mutable because it is also borrowed as immutable
+  --> tests/ui/alias.rs:10:5
+   |
+ 9 |     let shared = view.as_view();
+   |                  ---- immutable borrow occurs here
+10 |     view.set_a(2).unwrap();
+   |     ^^^^^^^^^^^^^ mutable borrow occurs here
+11 |     println!("{}", shared.a());
+   |                    ------ immutable borrow later used here

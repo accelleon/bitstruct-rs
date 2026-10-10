@@ -1,0 +1,9 @@
+error[E0499]: cannot borrow `view` as mutable more than once at a time
+  --> tests/ui/overlap.rs:10:22
+   |
+ 9 |     let mut first = view.reborrow();
+   |                     ---- first mutable borrow occurs here
+10 |     let mut second = view.reborrow();
+   |                      ^^^^ second mutable borrow occurs here
+11 |     first.set_a(1).unwrap();
+   |     ----- first borrow later used here

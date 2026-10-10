@@ -1,0 +1,15 @@
+[package]
+name = "bitstruct-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+bitstruct-macros = { path = "../bitstruct-macros" }
+
+[dev-dependencies]
+bitflags = "2"
+trybuild = "1"
+
+[[bench]]
+name = "access"
+harness = false

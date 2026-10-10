@@ -1,0 +1,29 @@
+error: word must start at a byte boundary outside another word
+ --> tests/ui/words.rs:4:27
+  |
+4 | struct Unaligned { a: u3, #[word(u16)] b: u13 }
+  |                           ^
+
+error: word must start at a byte boundary outside another word
+ --> tests/ui/words.rs:7:37
+  |
+7 | struct Nested { #[word(u16)] a: u8, #[word(u8)] b: u8 }
+  |                                     ^
+
+error: field exceeds word boundary
+  --> tests/ui/words.rs:10:39
+   |
+10 | struct Overflow { #[word(u16)] a: u3, b: u14, c: u7 }
+   |                                       ^
+
+error: schema and word groups must be fully byte-sized
+  --> tests/ui/words.rs:13:1
+   |
+13 | struct Incomplete { #[word(u16)] a: u8 }
+   | ^^^^^^
+
+error: expected u8, u16, u32, u64, or u128
+  --> tests/ui/words.rs:16:25
+   |
+16 | struct Invalid { #[word(u24)] a: u24 }
+   |                         ^^^

@@ -1,0 +1,23 @@
+error: expected one unsigned #[repr(...)]
+ --> tests/ui/enums.rs:4:1
+  |
+4 | enum Missing { A = 0 }
+  | ^^^^
+
+error: expected unsigned integer repr
+ --> tests/ui/enums.rs:7:8
+  |
+7 | #[repr(i8)]
+  |        ^^
+
+error: expected explicit unsigned integer literal discriminant
+  --> tests/ui/enums.rs:12:17
+   |
+12 | enum Implicit { A }
+   |                 ^
+
+error: BitEnum variants must be fieldless
+  --> tests/ui/enums.rs:16:13
+   |
+16 | enum Data { A(u8) = 0 }
+   |             ^

@@ -1,0 +1,12 @@
+error[E0599]: no method named `clone` found for struct `HeaderMut<'a>` in the current scope
+ --> tests/ui/borrows.rs:9:22
+  |
+3 | #[bitstruct(order = msb0, endian = big)]
+  | ---------------------------------------- method `clone` not found for this struct
+...
+9 |     let _copy = view.clone();
+  |                      ^^^^^ method not found in `HeaderMut<'_>`
+  |
+  = help: items from traits can only be used if the trait is implemented and in scope
+  = note: the following trait defines an item `clone`, perhaps you need to implement it:
+          candidate #1: `Clone`
