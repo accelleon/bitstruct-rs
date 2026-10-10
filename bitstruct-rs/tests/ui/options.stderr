@@ -1,39 +1,53 @@
 error: order is required
- --> tests/ui/options.rs:3:1
+ --> tests/ui/options.rs:4:16
   |
-3 | #[bitstruct(endian = big)]
-  | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  |
-  = note: this error originates in the attribute macro `bitstruct` (in Nightly builds, run with -Z macro-backtrace for more info)
+4 |     #[bitstruct(endian = big)]
+  |                ^^^^^^^^^^^^^^
 
 error: expected msb0 or lsb0
- --> tests/ui/options.rs:6:21
+ --> tests/ui/options.rs:9:25
   |
-6 | #[bitstruct(order = msb, endian = big)]
-  |                     ^^^
+9 |     #[bitstruct(order = msb, endian = big)]
+  |                         ^^^
 
 error: duplicate endian
- --> tests/ui/options.rs:9:41
-  |
-9 | #[bitstruct(order = msb0, endian = big, endian = little)]
-  |                                         ^^^^^^
+  --> tests/ui/options.rs:14:45
+   |
+14 |     #[bitstruct(order = msb0, endian = big, endian = little)]
+   |                                             ^^^^^^
 
 error: endian is required
-  --> tests/ui/options.rs:12:1
+  --> tests/ui/options.rs:19:16
    |
-12 | #[bitstruct(order = lsb0)]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^
-   |
-   = note: this error originates in the attribute macro `bitstruct` (in Nightly builds, run with -Z macro-backtrace for more info)
+19 |     #[bitstruct(order = lsb0)]
+   |                ^^^^^^^^^^^^^^
 
 error: expected big, little, or native
-  --> tests/ui/options.rs:15:36
+  --> tests/ui/options.rs:24:40
    |
-15 | #[bitstruct(order = lsb0, endian = sideways)]
-   |                                    ^^^^^^^^
+24 |     #[bitstruct(order = lsb0, endian = sideways)]
+   |                                        ^^^^^^^^
 
 error: duplicate order
-  --> tests/ui/options.rs:18:27
+  --> tests/ui/options.rs:29:31
    |
-18 | #[bitstruct(order = msb0, order = lsb0, endian = big)]
-   |                           ^^^^^
+29 |     #[bitstruct(order = msb0, order = lsb0, endian = big)]
+   |                               ^^^^^
+
+error: expected #[bitstruct(order = ..., endian = ...)]
+  --> tests/ui/options.rs:34:12
+   |
+34 |     struct NoOptions { a: u8 }
+   |            ^^^^^^^^^
+
+error: expected attribute arguments in parentheses: `bitstruct(...)`
+  --> tests/ui/options.rs:38:7
+   |
+38 |     #[bitstruct]
+   |       ^^^^^^^^^
+
+error: duplicate bitstruct attribute
+  --> tests/ui/options.rs:44:7
+   |
+44 |     #[bitstruct(order = msb0, endian = big)]
+   |       ^^^^^^^^^

@@ -1,23 +1,27 @@
 # bitstruct
 
 Zero-copy bitfields over byte slices, with in-place mutation and a `no_std`
-runtime. Declare fields using `u1` through `u128`; the macro generates immutable
-`Name<'a>` and mutable `NameMut<'a>` views.
+runtime. Inside `bitstruct! { ... }`, declare one or more structs marked
+`#[bitstruct(order = ..., endian = ...)]` with fields `u1` through `u128`; each
+becomes an immutable `Name<'a>` and a mutable `NameMut<'a>` view.
 
 ```rust
 use bitstruct_rs::bitstruct;
 
-#[bitstruct(order = msb0, endian = big)]
-pub struct Ipv4Prefix {
-    version: u4,
-    ihl: u4,
-    dscp: u6,
-    ecn: u2,
-    total_length: u16,
-    identification: u16,
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Ipv4Prefix {
+        version: u4,
+        ihl: u4,
+        dscp: u6,
+        ecn: u2,
+        total_length: u16,
+        identification: u16,
+        #[word(u16)]
+        _: u1,
+        flags: u2,
+        fragment: u13,
+    }
 }
 
 let mut bytes = [0x45, 0, 0, 20, 0, 0, 0x40, 1];
@@ -43,15 +47,20 @@ must start on a byte boundary and its fields must exactly fill the word.
 Supported word sizes are `u8`, `u16`, `u32`, `u64`, and `u128`.
 
 Within a decoded word, `msb0` places the first field in the high bits and `lsb0`
-in the low bits. For the example above, flags `2` and fragment `1` form
-`0x4001`: `[0x40, 0x01]` in big endian or `[0x01, 0x40]` in little endian.
+in the low bits. For the example above, the reserved bit `0`, flags `2` and
+fragment `1` form `0x4001`: `[0x40, 0x01]` in big endian or `[0x01, 0x40]` in
+little endian.
 
 Ungrouped packed fields traverse bytes in address order, most-significant-first
 for `msb0` or least-significant-first for `lsb0`, independently of endian.
 `msb0` packing is therefore already network bit order: IPv6's `version: u4,
 priority: u8, flow: u20` decodes the same with or without `#[word(u32)]`.
-Schemas must total a whole number of bytes. Use ordinary fields for reserved
-bits, and avoid `native` endian for portable wire formats.
+Schemas must total a whole number of bytes. Avoid `native` endian for portable
+wire formats.
+
+Name reserved or padding bits `_`, as in `_: u1` or `_: u8`. They take up space
+like any other field, may repeat, and get no accessors, so writes to other
+fields leave them unchanged.
 
 ## Access
 
@@ -78,11 +87,13 @@ use bitstruct_rs::{bitstruct, BitEnum};
 #[repr(u8)]
 pub enum Ecn { NotEct = 0, Ect1 = 1, Ect0 = 2, Congestion = 3 }
 
-#[bitstruct(order = msb0, endian = big)]
-pub struct Traffic {
-    dscp: u6,
-    #[bits(2)]
-    ecn: Ecn,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Traffic {
+        dscp: u6,
+        #[bits(2)]
+        ecn: Ecn,
+    }
 }
 
 let bytes = [0xb9];
@@ -102,12 +113,15 @@ bitflags::bitflags! {
         const DONT_FRAGMENT = 2;
     }
 }
-#[bitstruct(order = msb0, endian = big)]
-pub struct Fragment {
-    #[word(u16)]
-    #[bits(3)]
-    flags: Flags,
-    offset: u13,
+
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Fragment {
+        #[word(u16)]
+        #[bits(3)]
+        flags: Flags,
+        offset: u13,
+    }
 }
 let mut bytes = [0, 0];
 let mut view = FragmentMut::from_bytes(&mut bytes)?;

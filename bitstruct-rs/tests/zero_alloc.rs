@@ -36,15 +36,17 @@ unsafe impl GlobalAlloc for Counting {
 #[global_allocator]
 static ALLOCATOR: Counting = Counting;
 
-#[bitstruct(order = msb0, endian = little)]
-struct Header {
-    dscp: u6,
-    ecn: u2,
-    length: u16,
-    reserved: u8,
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = little)]
+    struct Header {
+        dscp: u6,
+        ecn: u2,
+        length: u16,
+        reserved: u8,
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
 #[test]

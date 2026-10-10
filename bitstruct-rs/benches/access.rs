@@ -3,38 +3,46 @@ use std::time::{Duration, Instant};
 
 use bitstruct_rs::bitstruct;
 
-#[bitstruct(order = msb0, endian = big)]
-pub struct Header {
-    dscp: u6,
-    ecn: u2,
-    length: u16,
-    reserved: u8,
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Header {
+        dscp: u6,
+        ecn: u2,
+        length: u16,
+        reserved: u8,
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = msb0, endian = little)]
-pub struct Little {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = little)]
+    pub struct Little {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
 // Cross-byte fields without `#[word]`: `fragment` spans 2 bytes, `wide` spans 3.
-#[bitstruct(order = msb0, endian = big)]
-pub struct Flat {
-    flags: u3,
-    fragment: u13,
-    pad: u3,
-    wide: u20,
-    tail: u1,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Flat {
+        flags: u3,
+        fragment: u13,
+        pad: u3,
+        wide: u20,
+        tail: u1,
+    }
 }
 
-#[bitstruct(order = lsb0, endian = little)]
-pub struct LsbFlat {
-    low: u3,
-    value: u13,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = little)]
+    pub struct LsbFlat {
+        low: u3,
+        value: u13,
+    }
 }
 
 #[unsafe(no_mangle)]

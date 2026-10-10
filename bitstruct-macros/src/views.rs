@@ -1,26 +1,53 @@
 //! Generates the borrowed view types for a schema.
 //!
-//! `struct Header { .. }` is replaced by:
+//! `bitstruct! { #[bitstruct(..)] struct Header { .. } }` expands to:
 //!
 //! - `Header<'a>`: read-only view over `&'a [u8]`, with getters.
 //! - `HeaderMut<'a>`: read-write view over `&'a mut [u8]`, with getters and setters.
 //!
 //! Both hold only a reference to the caller's bytes; nothing is copied.
+//! Padding fields named `_` get no accessors.
 
 use std::collections::HashSet;
 
 use proc_macro2::TokenStream;
 use quote::{format_ident, quote};
 use syn::ItemStruct;
+use syn::parse::{ParseStream, Parser};
 
 use crate::layout::{self, Field, Layout, mask, native_type};
 use crate::options::{self, Options};
 use crate::{access, runtime_crate};
 
-pub fn expand(args: TokenStream, item: &ItemStruct) -> syn::Result<TokenStream> {
-    let options = options::parse(args)?;
+/// Expands every struct in the macro input, reporting all their errors together.
+pub fn expand_all(input: TokenStream) -> syn::Result<TokenStream> {
+    let items = (|input: ParseStream| {
+        let mut items = Vec::new();
+        while !input.is_empty() {
+            items.push(input.parse::<ItemStruct>()?);
+        }
+        Ok(items)
+    })
+    .parse2(input)?;
+
+    let mut output = TokenStream::new();
+    let mut errors: Option<syn::Error> = None;
+    for item in items {
+        match expand(item) {
+            Ok(tokens) => output.extend(tokens),
+            Err(error) => match &mut errors {
+                Some(errors) => errors.combine(error),
+                None => errors = Some(error),
+            },
+        }
+    }
+    errors.map_or(Ok(output), Err)
+}
+
+fn expand(mut item: ItemStruct) -> syn::Result<TokenStream> {
+    let options = options::take(&mut item)?;
     let rt = runtime_crate()?;
-    let layout = layout::parse(item)?;
+    let layout = layout::parse(&item)?;
     check_name_collisions(&layout)?;
 
     let name = &item.ident;
@@ -34,11 +61,13 @@ pub fn expand(args: TokenStream, item: &ItemStruct) -> syn::Result<TokenStream> 
     let getters: Vec<_> = layout
         .fields
         .iter()
+        .filter(|field| !field.padding)
         .map(|field| getter(field, &options, byte_len, &rt))
         .collect();
     let setters: Vec<_> = layout
         .fields
         .iter()
+        .filter(|field| !field.padding)
         .map(|field| setter(field, &options, byte_len, &rt))
         .collect();
 
@@ -185,7 +214,7 @@ fn check_name_collisions(layout: &Layout) -> syn::Result<()> {
     .map(str::to_owned)
     .collect();
 
-    for field in &layout.fields {
+    for field in layout.fields.iter().filter(|field| !field.padding) {
         let mut names = vec![field.name.to_string(), format!("set_{}", field.name)];
         if field.uses_codec {
             names.push(format!("{}_raw", field.name));

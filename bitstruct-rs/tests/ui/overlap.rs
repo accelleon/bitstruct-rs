@@ -1,7 +1,9 @@
 use bitstruct_rs::bitstruct;
 
-#[bitstruct(order = msb0, endian = big)]
-struct Header { a: u8 }
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct Header { a: u8 }
+}
 
 fn main() {
     let mut bytes = [0];

@@ -1,35 +1,41 @@
 error: schema and word groups must be fully byte-sized
- --> tests/ui/schema.rs:4:1
+ --> tests/ui/schema.rs:5:5
   |
-4 | struct Partial { a: u3 }
-  | ^^^^^^
+5 |     struct Partial { a: u3 }
+  |     ^^^^^^
 
 error: field width must be 1..=128
- --> tests/ui/schema.rs:7:19
-  |
-7 | struct Oversize { a: u129 }
-  |                   ^
+  --> tests/ui/schema.rs:10:23
+   |
+10 |     struct Oversize { a: u129 }
+   |                       ^
 
 error: typed fields require #[bits(N)]
-  --> tests/ui/schema.rs:10:21
+  --> tests/ui/schema.rs:15:25
    |
-10 | struct Unknown { a: String }
-   |                     ^^^^^^
+15 |     struct Unknown { a: String }
+   |                         ^^^^^^
 
 error: generated accessor name collision
-  --> tests/ui/schema.rs:13:27
+  --> tests/ui/schema.rs:20:31
    |
-13 | struct Collision { a: u8, set_a: u8 }
-   |                           ^^^^^
+20 |     struct Collision { a: u8, set_a: u8 }
+   |                               ^^^^^
 
 error: only documentation attributes are supported on a bitstruct schema
-  --> tests/ui/schema.rs:16:1
+  --> tests/ui/schema.rs:25:5
    |
-16 | #[repr(u16)]
-   | ^
+25 |     #[repr(u16)]
+   |     ^
 
 error: only documentation attributes are supported on a bitstruct schema
-  --> tests/ui/schema.rs:20:1
+  --> tests/ui/schema.rs:31:5
    |
-20 | #[derive(Clone)]
-   | ^
+31 |     #[derive(Clone)]
+   |     ^
+
+error: padding fields must be u1..=u128
+  --> tests/ui/schema.rs:37:30
+   |
+37 |     struct TypedPadding { _: String, a: u8 }
+   |                              ^^^^^^

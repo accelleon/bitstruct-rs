@@ -1,118 +1,142 @@
 use bitstruct_rs::{BitCodec, BitEnum, Error, bitstruct};
 
-#[bitstruct(order = msb0, endian = big)]
-pub struct Ipv4 {
-    version: u4,
-    ihl: u4,
-    dscp: u6,
-    ecn: u2,
-    total_length: u16,
-    identification: u16,
-    flags: u3,
-    fragment: u13,
-    ttl: u8,
-    protocol: u8,
-    checksum: u16,
-    source: u32,
-    destination: u32,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Ipv4 {
+        version: u4,
+        ihl: u4,
+        dscp: u6,
+        ecn: u2,
+        total_length: u16,
+        identification: u16,
+        flags: u3,
+        fragment: u13,
+        ttl: u8,
+        protocol: u8,
+        checksum: u16,
+        source: u32,
+        destination: u32,
+    }
 }
 
 // RFC 8200. `msb0` packed fields already follow network bit order, so the
 // first 32 bits need no `#[word]`.
-#[bitstruct(order = msb0, endian = big)]
-pub struct Ipv6 {
-    version: u4,
-    priority: u8,
-    flow: u20,
-    payload_length: u16,
-    next_header: u8,
-    hop_limit: u8,
-    source: u128,
-    destination: u128,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Ipv6 {
+        version: u4,
+        priority: u8,
+        flow: u20,
+        payload_length: u16,
+        next_header: u8,
+        hop_limit: u8,
+        source: u128,
+        destination: u128,
+    }
 }
 
-#[bitstruct(order = msb0, endian = big)]
-pub struct Ipv6Word {
-    #[word(u32)]
-    version: u4,
-    priority: u8,
-    flow: u20,
-    payload_length: u16,
-    next_header: u8,
-    hop_limit: u8,
-    source: u128,
-    destination: u128,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    pub struct Ipv6Word {
+        #[word(u32)]
+        version: u4,
+        priority: u8,
+        flow: u20,
+        payload_length: u16,
+        next_header: u8,
+        hop_limit: u8,
+        source: u128,
+        destination: u128,
+    }
 }
 
-#[bitstruct(order = msb0, endian = big)]
-struct Big {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct Big {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = msb0, endian = little)]
-struct Little {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = little)]
+    struct Little {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = msb0, endian = native)]
-struct Native {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = native)]
+    struct Native {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = lsb0, endian = big)]
-struct LsbBig {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = big)]
+    struct LsbBig {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = lsb0, endian = little)]
-struct LsbLittle {
-    #[word(u16)]
-    flags: u3,
-    fragment: u13,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = little)]
+    struct LsbLittle {
+        #[word(u16)]
+        flags: u3,
+        fragment: u13,
+    }
 }
 
-#[bitstruct(order = lsb0, endian = little)]
-struct Lsb {
-    first: u3,
-    middle: u10,
-    last: u3,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = little)]
+    struct Lsb {
+        first: u3,
+        middle: u10,
+        last: u3,
+    }
 }
 
-#[bitstruct(order = msb0, endian = big)]
-struct Msb {
-    first: u3,
-    middle: u10,
-    last: u3,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct Msb {
+        first: u3,
+        middle: u10,
+        last: u3,
+    }
 }
 
-#[bitstruct(order = msb0, endian = little)]
-struct Wide {
-    a: u8,
-    b: u16,
-    c: u32,
-    d: u64,
-    e: u128,
-    prefix: u3,
-    unaligned: u128,
-    suffix: u5,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = little)]
+    struct Wide {
+        a: u8,
+        b: u16,
+        c: u32,
+        d: u64,
+        e: u128,
+        prefix: u3,
+        unaligned: u128,
+        suffix: u5,
+    }
 }
 
-#[bitstruct(order = lsb0, endian = big)]
-struct LsbWide {
-    prefix: u7,
-    unaligned: u128,
-    suffix: u1,
-    #[word(u128)]
-    high: u1,
-    low: u127,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = big)]
+    struct LsbWide {
+        prefix: u7,
+        unaligned: u128,
+        suffix: u1,
+        #[word(u128)]
+        high: u1,
+        low: u127,
+    }
 }
 
 #[derive(Debug, PartialEq, Eq, BitEnum)]
@@ -131,15 +155,17 @@ bitflags::bitflags! {
     }
 }
 
-#[bitstruct(order = msb0, endian = big)]
-struct Typed {
-    #[bits(2)]
-    mode: Mode,
-    #[bits(3)]
-    flags: Flags,
-    #[bits(1)]
-    enabled: bool,
-    reserved: u2,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct Typed {
+        #[bits(2)]
+        mode: Mode,
+        #[bits(3)]
+        flags: Flags,
+        #[bits(1)]
+        enabled: bool,
+        reserved: u2,
+    }
 }
 
 #[test]
@@ -276,6 +302,119 @@ fn ipv6_packed_matches_word() {
         assert_eq!(packed_bytes, expected);
         assert_eq!(word_bytes, expected);
     }
+}
+
+// Views only borrow, so an enum of them is a tagged union over one buffer:
+// the version nibble picks the layout, and each variant checks its own length.
+bitstruct! {
+    #[bitstruct(order = msb0, endian = big)]
+    struct IpVersion {
+        version: u4,
+        low: u4,
+    }
+}
+
+enum IpHeader<'a> {
+    V4(Ipv4<'a>),
+    V6(Ipv6<'a>),
+}
+
+enum IpHeaderMut<'a> {
+    V4(Ipv4Mut<'a>),
+    V6(Ipv6Mut<'a>),
+}
+
+impl<'a> IpHeader<'a> {
+    fn from_bytes(bytes: &'a [u8]) -> Result<Self, Error> {
+        match IpVersion::from_bytes(bytes)?.version() {
+            4 => Ipv4::from_bytes(bytes).map(Self::V4),
+            6 => Ipv6::from_bytes(bytes).map(Self::V6),
+            version => Err(Error::InvalidValue {
+                value: version.into(),
+            }),
+        }
+    }
+
+    fn hop_limit(&self) -> u8 {
+        match self {
+            Self::V4(header) => header.ttl(),
+            Self::V6(header) => header.hop_limit(),
+        }
+    }
+}
+
+impl<'a> IpHeaderMut<'a> {
+    fn from_bytes(bytes: &'a mut [u8]) -> Result<Self, Error> {
+        let version = IpVersion::from_bytes(bytes)?.version();
+        match version {
+            4 => Ipv4Mut::from_bytes(bytes).map(Self::V4),
+            6 => Ipv6Mut::from_bytes(bytes).map(Self::V6),
+            version => Err(Error::InvalidValue {
+                value: version.into(),
+            }),
+        }
+    }
+
+    fn decrement_hop_limit(&mut self) -> Result<(), Error> {
+        match self {
+            Self::V4(header) => header.set_ttl(header.ttl() - 1),
+            Self::V6(header) => header.set_hop_limit(header.hop_limit() - 1),
+        }
+    }
+}
+
+#[test]
+fn ip_header_selects_layout_by_version() {
+    // A bare 20-byte IPv4 header is accepted although IPv6 needs 40.
+    let mut ipv4 = [
+        0x45, 0, 0, 20, 0, 0, 0x40, 0, 64, 17, 0, 0, 192, 0, 2, 1, 198, 51, 100, 2,
+    ];
+    let mut ipv6 = IPV6;
+
+    let IpHeader::V4(header) = IpHeader::from_bytes(&ipv4).unwrap() else {
+        panic!("expected IPv4");
+    };
+    assert_eq!(header.source(), 0xc0000201);
+    assert_eq!(IpHeader::from_bytes(&ipv4).unwrap().hop_limit(), 64);
+    let IpHeader::V6(header) = IpHeader::from_bytes(&ipv6).unwrap() else {
+        panic!("expected IPv6");
+    };
+    assert_eq!(header.flow(), 0xabcde);
+    assert_eq!(IpHeader::from_bytes(&ipv6).unwrap().hop_limit(), 64);
+
+    IpHeaderMut::from_bytes(&mut ipv4)
+        .unwrap()
+        .decrement_hop_limit()
+        .unwrap();
+    IpHeaderMut::from_bytes(&mut ipv6)
+        .unwrap()
+        .decrement_hop_limit()
+        .unwrap();
+    assert_eq!(ipv4[8], 63);
+    assert_eq!(ipv6[7], 63);
+    assert_eq!(&ipv6[8..], &IPV6[8..]);
+
+    // An IPv6 version nibble on a 20-byte buffer is too short, not misread.
+    ipv4[0] = 0x60;
+    assert!(matches!(
+        IpHeader::from_bytes(&ipv4),
+        Err(Error::BufferTooShort {
+            required: 40,
+            actual: 20
+        })
+    ));
+    ipv4[0] = 0x55;
+    assert!(matches!(
+        IpHeader::from_bytes(&ipv4),
+        Err(Error::InvalidValue { value: 5 })
+    ));
+    assert!(matches!(
+        IpHeader::from_bytes(&[]),
+        Err(Error::BufferTooShort {
+            required: 1,
+            actual: 0
+        })
+    ));
 }
 
 #[test]
@@ -584,8 +723,10 @@ fn check_packed(
 
 macro_rules! packed_case {
     ($order:ident, $msb:literal, $start:literal, $width:literal, { $($field:ident: $ty:ident),* }) => {{
-        #[bitstruct(order = $order, endian = little)]
-        struct Case { $($field: $ty),* }
+        bitstruct! {
+            #[bitstruct(order = $order, endian = little)]
+            struct Case { $($field: $ty),* }
+        }
         check_packed(
             Case::BYTE_LEN,
             $start,
@@ -624,4 +765,60 @@ macro_rules! packed_cases {
 fn packed_windows_match_reference() {
     packed_cases!(msb0, true);
     packed_cases!(lsb0, false);
+}
+
+bitstruct! {
+    /// IPv4 flags and fragment offset; the first flag bit is reserved.
+    #[bitstruct(order = msb0, endian = big)]
+    struct PaddedFragment {
+        _: u1,
+        dont_fragment: u1,
+        more_fragments: u1,
+        offset: u13,
+        _: u8,
+        ttl: u8,
+    }
+
+    #[bitstruct(order = msb0, endian = little)]
+    struct PaddedWord {
+        #[word(u16)]
+        _: u4,
+        value: u12,
+    }
+
+    #[bitstruct(order = lsb0, endian = little)]
+    struct PaddedLsb {
+        _: u3,
+        value: u10,
+        _: u3,
+    }
+}
+
+#[test]
+fn padding_fields_reserve_bits_without_accessors() {
+    assert_eq!(PaddedFragment::BYTE_LEN, 4);
+    let mut bytes = [0xff; 4];
+    let mut view = PaddedFragmentMut::from_bytes(&mut bytes).unwrap();
+    assert_eq!(view.offset(), 0x1fff);
+    assert_eq!(view.ttl(), 0xff);
+    view.set_dont_fragment(0).unwrap();
+    view.set_more_fragments(0).unwrap();
+    view.set_offset(0x0123).unwrap();
+    view.set_ttl(64).unwrap();
+    // Reserved bit 0 and byte 2 keep their contents.
+    assert_eq!(bytes, [0x81, 0x23, 0xff, 64]);
+
+    let mut bytes = [0xa5, 0x5a];
+    let mut view = PaddedWordMut::from_bytes(&mut bytes).unwrap();
+    assert_eq!(view.value(), 0xaa5);
+    view.set_value(0x123).unwrap();
+    assert_eq!(u16::from_le_bytes(bytes), 0x5123);
+
+    for initial in [0u16, 0xffff, 0xa5a5] {
+        let mut bytes = initial.to_le_bytes();
+        let mut view = PaddedLsbMut::from_bytes(&mut bytes).unwrap();
+        assert_eq!(view.value(), (initial >> 3) & 0x3ff);
+        view.set_value(0x2aa).unwrap();
+        assert_eq!(u16::from_le_bytes(bytes), (initial & 0xe007) | (0x2aa << 3));
+    }
 }

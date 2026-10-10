@@ -1,7 +1,7 @@
-//! Parses the arguments of `#[bitstruct(order = ..., endian = ...)]`.
+//! Parses the `#[bitstruct(order = ..., endian = ...)]` attribute on each schema.
 
 use proc_macro2::{Span, TokenStream};
-use syn::Ident;
+use syn::{Attribute, Ident, ItemStruct, spanned::Spanned};
 
 /// Which end of a byte or word the first field occupies.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -53,7 +53,34 @@ impl Endian {
     }
 }
 
-pub fn parse(args: TokenStream) -> syn::Result<Options> {
+/// Removes the `#[bitstruct(...)]` attribute from `item` and parses it.
+pub fn take(item: &mut ItemStruct) -> syn::Result<Options> {
+    let mut options: Option<Attribute> = None;
+    let mut others = Vec::new();
+    for attr in item.attrs.drain(..) {
+        if !attr.path().is_ident("bitstruct") {
+            others.push(attr);
+        } else if options.is_some() {
+            return Err(syn::Error::new(
+                attr.path().span(),
+                "duplicate bitstruct attribute",
+            ));
+        } else {
+            options = Some(attr);
+        }
+    }
+    item.attrs = others;
+    let attr = options.ok_or_else(|| {
+        syn::Error::new(
+            item.ident.span(),
+            "expected #[bitstruct(order = ..., endian = ...)]",
+        )
+    })?;
+    let list = attr.meta.require_list()?;
+    parse(list.tokens.clone(), list.delimiter.span().join())
+}
+
+fn parse(args: TokenStream, span: Span) -> syn::Result<Options> {
     let mut order = None;
     let mut endian = None;
 
@@ -91,7 +118,7 @@ pub fn parse(args: TokenStream) -> syn::Result<Options> {
     });
     syn::parse::Parser::parse2(parser, args)?;
 
-    let missing = |message| syn::Error::new(Span::call_site(), message);
+    let missing = |message| syn::Error::new(span, message);
     Ok(Options {
         order: order.ok_or_else(|| missing("order is required"))?,
         endian: endian.ok_or_else(|| missing("endian is required"))?,

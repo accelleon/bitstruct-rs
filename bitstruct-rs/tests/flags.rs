@@ -41,12 +41,14 @@ bitflags::bitflags! {
     }
 }
 
-#[bitstruct(order = msb0, endian = little)]
-struct Header {
-    #[word(u16)]
-    #[bits(3)]
-    flags: Flags,
-    offset: u13,
+bitstruct! {
+    #[bitstruct(order = msb0, endian = little)]
+    struct Header {
+        #[word(u16)]
+        #[bits(3)]
+        flags: Flags,
+        offset: u13,
+    }
 }
 
 #[test]

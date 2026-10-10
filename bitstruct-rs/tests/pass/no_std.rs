@@ -14,12 +14,14 @@ bitflags::bitflags! {
 #[repr(u16)]
 enum Mode { A = 0, B = 1 }
 
-#[bitstruct(order = lsb0, endian = native)]
-pub struct Header {
-    #[word(u16)]
-    #[bits(2)]
-    mode: Mode,
-    rest: u14,
+bitstruct! {
+    #[bitstruct(order = lsb0, endian = native)]
+    pub struct Header {
+        #[word(u16)]
+        #[bits(2)]
+        mode: Mode,
+        rest: u14,
+    }
 }
 
 fn main() {

@@ -23,6 +23,8 @@ pub struct Field {
     pub ty: Type,
     /// True if values convert through `BitCodec` (enums, flags, `bool`).
     pub uses_codec: bool,
+    /// True for `_: uN`: reserved bits that get no accessors.
+    pub padding: bool,
     /// Width in bits.
     pub bits: usize,
     /// Position of the field's first bit within the buffer.
@@ -89,6 +91,14 @@ pub fn parse(item: &ItemStruct) -> syn::Result<Layout> {
         // `u6` declares its own width; other types need `#[bits(N)]`.
         let declared = unsigned_width(&field.ty);
         let uses_codec = attrs.bits.is_some() || declared.is_none();
+        let name = field.ident.clone().expect("named field");
+        let padding = name == "_";
+        if padding && uses_codec {
+            return Err(syn::Error::new(
+                field.ty.span(),
+                "padding fields must be u1..=u128",
+            ));
+        }
         let bits = attrs
             .bits
             .or(declared)
@@ -122,9 +132,10 @@ pub fn parse(item: &ItemStruct) -> syn::Result<Layout> {
         };
 
         fields.push(Field {
-            name: field.ident.clone().expect("named field"),
+            name,
             ty,
             uses_codec,
+            padding,
             bits,
             start: next_bit,
             storage,

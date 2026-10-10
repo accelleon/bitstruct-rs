@@ -1,13 +1,13 @@
 //! Code generators behind the `bitstruct` crate.
 //!
 //! A procedural macro is a small program the compiler runs while building the
-//! code that uses it. It receives the source of the annotated item and returns
-//! replacement source. Nothing in this crate runs when packets are processed;
+//! code that uses it. It receives the source inside `bitstruct! { ... }` and
+//! returns replacement source. Nothing in this crate runs when packets are processed;
 //! it only writes the getters and setters that do.
 //!
 //! Reading order:
 //!
-//! - `options.rs`: parses `#[bitstruct(order = ..., endian = ...)]`.
+//! - `options.rs`: parses `#[bitstruct(order = ..., endian = ...)]` on each schema.
 //! - `layout.rs`: gives every field a fixed bit position and validates the schema.
 //! - `access.rs`: writes the shift-and-mask code that reads or writes one field.
 //! - `views.rs`: assembles the generated `Name` and `NameMut` types.
@@ -24,11 +24,14 @@ mod views;
 
 use proc_macro::TokenStream;
 
-/// `#[bitstruct(order = msb0, endian = big)]` on a struct of bit fields.
-#[proc_macro_attribute]
-pub fn bitstruct(args: TokenStream, item: TokenStream) -> TokenStream {
-    let item = syn::parse_macro_input!(item as syn::ItemStruct);
-    report(views::expand(args.into(), &item))
+/// One or more structs of bit fields, each marked
+/// `#[bitstruct(order = msb0, endian = big)]`.
+///
+/// A function-like macro rather than an attribute, because rustc rejects `_`
+/// field names before an attribute macro could accept them as padding.
+#[proc_macro]
+pub fn bitstruct(input: TokenStream) -> TokenStream {
+    report(views::expand_all(input.into()))
 }
 
 /// Field codec for a fieldless enum with an unsigned `#[repr(...)]`.
