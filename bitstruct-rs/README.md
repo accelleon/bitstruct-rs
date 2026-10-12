@@ -72,6 +72,8 @@ fields leave them unchanged.
 - `from_bytes()` checks length and borrows only the header-sized prefix.
 - `as_view()` and `reborrow()` borrow an existing mutable view.
 - `as_bytes()` and `as_bytes_mut()` expose the header bytes.
+- A field's doc comments document its getter and setter; undocumented fields
+  get a generated line, so `#![deny(missing_docs)]` crates build cleanly.
 
 Mutable views are neither `Copy` nor `Clone`. Split the packet before borrowing
 if you need concurrent mutable access to its payload.

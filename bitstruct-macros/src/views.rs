@@ -72,9 +72,13 @@ fn expand(mut item: ItemStruct) -> syn::Result<TokenStream> {
         .collect();
 
     let constants = quote! {
+        /// Size of the schema in bytes.
         pub const BYTE_LEN: usize = #byte_len;
+        /// Size of the schema in bits.
         pub const BIT_LEN: usize = #bit_len;
+        /// Bit order of packed fields: `"msb0"` or `"lsb0"`.
         pub const ORDER: &'static str = #order;
+        /// Byte order of words: `"big"`, `"little"` or `"native"`.
         pub const ENDIAN: &'static str = #endian;
     };
 
@@ -100,6 +104,7 @@ fn expand(mut item: ItemStruct) -> syn::Result<TokenStream> {
                 Ok(Self { inner })
             }
 
+            /// The `BYTE_LEN` bytes this view reads.
             #[inline]
             pub fn as_bytes(&self) -> &'a [u8] { self.inner }
 
@@ -119,9 +124,11 @@ fn expand(mut item: ItemStruct) -> syn::Result<TokenStream> {
                 Ok(Self { inner })
             }
 
+            /// The `BYTE_LEN` bytes this view reads and writes.
             #[inline]
             pub fn as_bytes(&self) -> &[u8] { self.inner }
 
+            /// Mutable access to the `BYTE_LEN` bytes this view reads and writes.
             #[inline]
             pub fn as_bytes_mut(&mut self) -> &mut [u8] { self.inner }
 
@@ -143,12 +150,12 @@ fn expand(mut item: ItemStruct) -> syn::Result<TokenStream> {
 fn getter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -> TokenStream {
     let name = &field.name;
     let ty = &field.ty;
-    let docs = &field.docs;
+    let docs = docs_or(field, "Reads");
     let read = access::read(field, options, byte_len);
 
     if field.kind == FieldKind::Bool {
         return quote! {
-            #(#docs)*
+            #docs
             #[inline]
             pub fn #name(&self) -> bool { (#read) != 0 }
         };
@@ -157,7 +164,7 @@ fn getter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
         let raw = format_ident!("{}_raw", name);
         let raw_ty = native_type(field.bits);
         quote! {
-            #(#docs)*
+            #docs
             #[inline]
             pub fn #name(&self) -> ::core::result::Result<#ty, #rt::Error> {
                 <#ty as #rt::BitCodec>::from_bits(#read)
@@ -169,7 +176,7 @@ fn getter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
         }
     } else {
         quote! {
-            #(#docs)*
+            #docs
             #[inline]
             pub fn #name(&self) -> #ty { (#read) as #ty }
         }
@@ -180,7 +187,7 @@ fn getter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
 fn setter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -> TokenStream {
     let name = format_ident!("set_{}", field.name);
     let ty = &field.ty;
-    let docs = &field.docs;
+    let docs = docs_or(field, "Writes");
     let bits = field.bits as u32;
     let max = mask(field.bits);
     let write = access::write(field, options, byte_len);
@@ -190,7 +197,7 @@ fn setter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
     };
 
     quote! {
-        #(#docs)*
+        #docs
         #[inline]
         pub fn #name(&mut self, value: #ty) -> ::core::result::Result<(), #rt::Error> {
             let value = #to_bits;
@@ -201,6 +208,22 @@ fn setter(field: &Field, options: &Options, byte_len: usize, rt: &TokenStream) -
             Ok(())
         }
     }
+}
+
+/// The field's own doc comments, or `"{verb} `name` (bits start..end)."` if it has none,
+/// so generated accessors pass `missing_docs`.
+fn docs_or(field: &Field, verb: &str) -> TokenStream {
+    if !field.docs.is_empty() {
+        let docs = &field.docs;
+        return quote!(#(#docs)*);
+    }
+    let text = format!(
+        " {verb} `{}` (bits {}..{}).",
+        field.name,
+        field.start,
+        field.start + field.bits
+    );
+    quote!(#[doc = #text])
 }
 
 /// Rejects fields whose generated methods would clash, e.g. `a` and `set_a`.
